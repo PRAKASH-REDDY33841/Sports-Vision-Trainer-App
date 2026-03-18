@@ -283,10 +283,10 @@ fun uploadProfileFinal(
     }
 
     RetrofitClient.api.saveProfile(
-        part,
         email.toRequestBody("text/plain".toMediaType()),
         name.toRequestBody("text/plain".toMediaType()),
-        bio.toRequestBody("text/plain".toMediaType())
+        bio.toRequestBody("text/plain".toMediaType()),
+        part
     ).enqueue(object : Callback<ApiResponse> {
 
         override fun onResponse(

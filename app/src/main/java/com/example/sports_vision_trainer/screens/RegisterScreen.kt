@@ -40,7 +40,14 @@ fun RegisterScreen(nav: NavController) {
 
     var showDialog by remember { mutableStateOf(false) }
 
+    var errorMsg by remember { mutableStateOf("") }   // ✅ ADDED
+
     val confirmMatch = confirm.isNotEmpty() && confirm == password
+
+    // ✅ PASSWORD VALIDATION RULE
+    val passwordValid = password.matches(
+        Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#\$%^&+=!]).{8,16}$")
+    )
 
     Column(
         Modifier.fillMaxSize().padding(24.dp),
@@ -95,15 +102,18 @@ fun RegisterScreen(nav: NavController) {
             onValueChange = { password = it },
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
-            isError = pTouched && pBlur && password.isBlank(),
+            isError = pTouched && pBlur && !passwordValid,
             modifier = Modifier.fillMaxWidth()
                 .onFocusChanged {
                     if (it.isFocused) pTouched = true
                     else if (pTouched) pBlur = true
                 }
         )
-        if (pTouched && pBlur && password.isBlank())
-            Text("* Password required", color = MaterialTheme.colorScheme.error)
+        if (pTouched && pBlur && !passwordValid)
+            Text(
+                "* Password must contain uppercase, lowercase, number & special character (8-16)",
+                color = MaterialTheme.colorScheme.error
+            )
 
         Spacer(Modifier.height(12.dp))
 
@@ -131,15 +141,20 @@ fun RegisterScreen(nav: NavController) {
 
         Button(
             onClick = {
-                if (username.isBlank() || email.isBlank() || password.isBlank() || !confirmMatch)
+                if (username.isBlank() || email.isBlank() || !passwordValid || !confirmMatch)
                     return@Button
 
                 RetrofitClient.api.register(
                     RegisterRequest(username, email, password)
                 ).enqueue(object : Callback<ApiResponse> {
                     override fun onResponse(call: Call<ApiResponse>, r: Response<ApiResponse>) {
-                        if (r.body()?.status == "success")
+                        val response = r.body()   // ✅ ADDED
+
+                        if (response?.status == "success") {
                             showDialog = true
+                        } else {
+                            errorMsg = response?.message ?: "Error"   // ✅ ADDED
+                        }
                     }
                     override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
                         t.printStackTrace()
@@ -148,6 +163,11 @@ fun RegisterScreen(nav: NavController) {
             },
             modifier = Modifier.fillMaxWidth()
         ) { Text("Register") }
+
+        // ✅ SHOW ERROR MESSAGE
+        if (errorMsg.isNotEmpty()) {
+            Text(errorMsg, color = MaterialTheme.colorScheme.error)
+        }
 
         TextButton(onClick = { nav.navigate("login") }) {
             Text("Already registered? Login")

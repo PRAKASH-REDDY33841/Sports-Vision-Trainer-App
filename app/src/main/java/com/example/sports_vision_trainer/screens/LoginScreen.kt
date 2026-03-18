@@ -1,5 +1,6 @@
 package com.example.sports_vision_trainer.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -7,13 +8,17 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.sports_vision_trainer.R
 import com.example.sports_vision_trainer.network.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -37,14 +42,46 @@ fun LoginScreen(nav: NavController) {
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(
-        Modifier
+        modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Spacer(Modifier.height(60.dp))
+        Spacer(Modifier.height(15.dp))
 
-        // ✅ TITLE
+        // 🔹 TOP LOGOS IN ONE ROW
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            AsyncImage(
+                model = "https://simatscgpa.netlify.app/logo2.png",
+                contentDescription = null,
+                modifier = Modifier.size(80.dp)
+            )
+
+            Image(
+                painter = painterResource(id = R.drawable.vision_logo),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(top = 30.dp)
+                    .size(140.dp)
+
+            )
+
+            AsyncImage(
+                model = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQzSASJ8CW7h0pmb79FrMdRMp73kQ96SnFPg&s",
+                contentDescription = null,
+                modifier = Modifier.size(80.dp)
+            )
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // TITLE
         Text(
             "VISION TRAINING FOR ATHLETES",
             style = MaterialTheme.typography.headlineSmall
@@ -54,7 +91,7 @@ fun LoginScreen(nav: NavController) {
 
         Column(modifier = Modifier.fillMaxWidth()) {
 
-            // ✅ EMAIL FIELD
+            // EMAIL FIELD
             OutlinedTextField(
                 value = email,
                 onValueChange = {
@@ -82,7 +119,7 @@ fun LoginScreen(nav: NavController) {
 
             Spacer(Modifier.height(12.dp))
 
-            // ✅ PASSWORD FIELD WITH VISIBILITY TOGGLE
+            // PASSWORD FIELD
             OutlinedTextField(
                 value = password,
                 onValueChange = {
@@ -132,7 +169,7 @@ fun LoginScreen(nav: NavController) {
 
             Spacer(Modifier.height(12.dp))
 
-            // ✅ LOGIN BUTTON
+            // LOGIN BUTTON
             Button(
                 onClick = {
 
@@ -199,5 +236,15 @@ fun LoginScreen(nav: NavController) {
                 Text("Register now")
             }
         }
+
+        Spacer(Modifier.weight(1f))
+
+        // FOOTER
+        Text(
+            "Powered by SIMATS Engineering",
+            style = MaterialTheme.typography.bodySmall
+        )
+
+        Spacer(Modifier.height(10.dp))
     }
 }

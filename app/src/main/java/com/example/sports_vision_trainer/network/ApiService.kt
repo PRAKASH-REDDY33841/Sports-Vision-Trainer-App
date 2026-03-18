@@ -32,14 +32,14 @@ interface ApiService {
         @Body req: ResetRequest
     ): Call<ApiResponse>
 
-    // ✅ PROFILE SAVE — EXACT MATCH
+    // ✅ PROFILE SAVE — FIXED ORDER (ONLY CHANGE)
     @Multipart
     @POST("save_profile.php")
     fun saveProfile(
-        @Part photo: MultipartBody.Part?,
         @Part("email") email: RequestBody,
         @Part("name") name: RequestBody,
-        @Part("bio") bio: RequestBody
+        @Part("bio") bio: RequestBody,
+        @Part photo: MultipartBody.Part?
     ): Call<ApiResponse>
 
     @GET("get_profile.php")
