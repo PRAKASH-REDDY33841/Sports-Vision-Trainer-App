@@ -80,7 +80,7 @@ fun GetStartedScreen(nav: NavController) {
         ) {
 
             Button(
-                onClick = { nav.navigate("login") },
+                onClick = { nav.navigate("role_selection") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp),

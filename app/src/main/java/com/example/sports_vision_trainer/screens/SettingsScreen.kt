@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -95,6 +96,19 @@ fun SettingsScreen(
                 leadingContent = { Icon(Icons.Default.Person, null) },
                 modifier = Modifier.clickable {
                     nav.navigate("profile/$email/$username")
+                }
+            )
+
+            HorizontalDivider()
+
+            Text("Appointments", style = MaterialTheme.typography.titleMedium)
+
+            ListItem(
+                headlineContent = { Text("Booking History") },
+                leadingContent = { Icon(Icons.Default.DateRange, null) },
+                modifier = Modifier.clickable {
+                    val encodedEmail = java.net.URLEncoder.encode(email, "UTF-8")
+                    nav.navigate("booking_history/$encodedEmail")
                 }
             )
 

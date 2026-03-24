@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -27,6 +29,8 @@ import com.example.sports_vision_trainer.network.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlinx.coroutines.delay
+import android.content.Context
 
 @Composable
 fun HomeScreen(
@@ -35,6 +39,7 @@ fun HomeScreen(
     username: String
 ) {
 
+
     val ctx = LocalContext.current
 
     var hasNew by remember { mutableStateOf(NotificationBadgeStore.hasNew(ctx)) }
@@ -42,6 +47,7 @@ fun HomeScreen(
 
     var profileUrl by remember { mutableStateOf<String?>(null) }
     var showNotifications by remember { mutableStateOf(false) }
+    var appointmentAlert by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(email) {
         RetrofitClient.api.getProfile(email)
@@ -60,7 +66,52 @@ fun HomeScreen(
                     println("PROFILE LOAD FAILED = ${t.message}")
                 }
             })
+
+        val prefs = ctx.getSharedPreferences("Notifications", Context.MODE_PRIVATE)
+        
+        while (true) {
+            RetrofitClient.api.getAthleteNotifications(email).enqueue(object : Callback<ApiResponse> {
+                override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
+                    if (response.isSuccessful && response.body()?.status == "success") {
+                        val body = response.body()
+                        val appId = body?.id ?: -1
+                        val appStatus = body?.app_status ?: ""
+                        val msg = body?.message ?: ""
+                        
+                        val lastNotifiedId = prefs.getInt("last_id", -1)
+                        val lastNotifiedStatus = prefs.getString("last_status", "")
+                        val lastNotifiedTime = prefs.getLong("last_time", 0)
+                        
+                        if (appStatus == "REJECTED") {
+                            // Notify once for a specific rejected appointment
+                            if (appId != lastNotifiedId || lastNotifiedStatus != "REJECTED") {
+                                NotificationHelper.showNotification(ctx, "Appointment Rejected", msg)
+                                prefs.edit()
+                                    .putInt("last_id", appId)
+                                    .putString("last_status", "REJECTED")
+                                    .apply()
+                            }
+                        } else if (appStatus == "ACCEPTED") {
+                            val now = System.currentTimeMillis()
+                            // Remind every hour if accepted
+                            if (appId != lastNotifiedId || lastNotifiedStatus != "ACCEPTED" || (now - lastNotifiedTime > 3600000)) {
+                                NotificationHelper.showNotification(ctx, "Appointment Accepted", msg)
+                                prefs.edit()
+                                    .putInt("last_id", appId)
+                                    .putString("last_status", "ACCEPTED")
+                                    .putLong("last_time", now)
+                                    .apply()
+                            }
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<ApiResponse>, t: Throwable) {}
+            })
+            delay(60000) // Poll every 1 minute
+        }
     }
+
+    val scrollState = rememberScrollState()
 
     Scaffold { pad ->
 
@@ -69,6 +120,7 @@ fun HomeScreen(
                 .padding(pad)
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
+                .verticalScroll(scrollState)
         ) {
 
             Spacer(Modifier.height(16.dp))
@@ -215,6 +267,74 @@ fun HomeScreen(
                     }
                 )
             }
+
+            Spacer(Modifier.height(32.dp))
+
+            // Schedule Appointment Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Color(0xFFE4E6EB))
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Schedule Appointment with Doctors",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2D1E17),
+                        lineHeight = 24.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    
+                    Spacer(Modifier.height(12.dp))
+                    
+                    Text(
+                        "Review your vision baseline and customize your training protocol for the upcoming season.",
+                        fontSize = 13.sp,
+                        color = Color.Gray,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        lineHeight = 18.sp
+                    )
+                    
+                    Spacer(Modifier.height(24.dp))
+                    
+                    Button(
+                        onClick = {
+                            val encodedEmail = java.net.URLEncoder.encode(email, "UTF-8")
+                            val encodedName = java.net.URLEncoder.encode(username, "UTF-8")
+                            nav.navigate("select_doctor/$encodedEmail/$encodedName")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2D1E17))
+                    ) {
+                        Text("BOOK SESSION", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            
+            Spacer(Modifier.height(32.dp))
+
+            // Project Info Text (Added for space and context)
+            Text(
+                "Elevate Your Game",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Gray
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Sports vision training is the specialized practice of improving an athlete's visual performance through targeted exercises. By training the brain-eye connection, athletes can improve reaction time, depth perception, and peripheral awareness.",
+                fontSize = 13.sp,
+                color = Color.LightGray,
+                lineHeight = 18.sp
+            )
+            
+            Spacer(Modifier.height(80.dp)) // Extra space for fixed bottom bar
         }
     }
 

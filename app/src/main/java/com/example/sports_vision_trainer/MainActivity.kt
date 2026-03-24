@@ -64,6 +64,10 @@ class MainActivity : ComponentActivity() {
                     // ---------- AUTH ----------
 
                     composable("start") { GetStartedScreen(nav) }
+                    composable("role_selection") { RoleSelectionScreen(nav) }
+                    composable("doctor_login") { DoctorLoginScreen(nav) }
+                    composable("doctor_register") { DoctorRegistrationScreen(nav) }
+                    composable("doctor_forgot") { DoctorForgotPasswordScreen(nav) }
                     composable("login") { LoginScreen(nav) }
                     composable("register") { RegisterScreen(nav) }
                     composable("forgot") { ForgotPasswordScreen(nav) }
@@ -167,6 +171,7 @@ class MainActivity : ComponentActivity() {
 
                         ReactionResultScreen(
                             nav = nav,
+                            email = currentEmail,
                             taps = taps,
                             avgReaction = avg,
                             misses = misses,
@@ -224,7 +229,7 @@ class MainActivity : ComponentActivity() {
 
                     composable("stats") {
                         MainScreen(nav, currentEmail, currentName) {
-                            StatsScreen(nav)
+                            StatsScreen(nav, currentEmail)
                         }
                     }
 
@@ -319,6 +324,51 @@ class MainActivity : ComponentActivity() {
                         SoundVisualGameScreen(
                             nav = nav,
                             origin = back.arguments?.getString("origin") ?: "sports"
+                        )
+                    }
+
+                    composable("select_doctor/{email}/{name}") { back ->
+                        SelectDoctorScreen(
+                            nav = nav,
+                            athleteEmail = back.arguments?.getString("email") ?: "",
+                            athleteName = back.arguments?.getString("name") ?: ""
+                        )
+                    }
+
+                    composable("booking_history/{email}") { back ->
+                        BookingHistoryScreen(
+                            nav = nav,
+                            athleteEmail = back.arguments?.getString("email") ?: ""
+                        )
+                    }
+
+                    composable("athlete_session_history/{email}/{name}/{date}") { back ->
+                        val email = back.arguments?.getString("email") ?: ""
+                        val name = back.arguments?.getString("name") ?: ""
+                        val date = back.arguments?.getString("date") ?: ""
+                        AthleteSessionHistoryScreen(nav, email, name, date)
+                    }
+
+                    composable("doctor_home/{email}/{name}") { back ->
+                        DoctorHomeScreen(
+                            nav = nav,
+                            email = back.arguments?.getString("email") ?: "",
+                            username = back.arguments?.getString("name") ?: "Doctor"
+                        )
+                    }
+
+                    composable("doctor_profile/{email}") { back ->
+                        DoctorProfileScreen(
+                            nav = nav,
+                            email = back.arguments?.getString("email") ?: ""
+                        )
+                    }
+
+                    composable("doctor_settings/{email}/{name}") { back ->
+                        DoctorSettingsScreen(
+                            nav = nav,
+                            email = back.arguments?.getString("email") ?: "",
+                            username = back.arguments?.getString("name") ?: "Doctor"
                         )
                     }
                 }

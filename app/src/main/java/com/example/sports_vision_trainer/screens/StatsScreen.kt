@@ -20,6 +20,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.sports_vision_trainer.model.GameSession
 import com.example.sports_vision_trainer.storage.SessionHistoryStore
+import com.example.sports_vision_trainer.network.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import com.example.sports_vision_trainer.viewmodel.StatsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -27,7 +31,7 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatsScreen(nav: NavController) {
+fun StatsScreen(nav: NavController, email: String) {
 
     val viewModel: StatsViewModel = viewModel()
     val ctx = LocalContext.current
@@ -38,13 +42,22 @@ fun StatsScreen(nav: NavController) {
 
     LaunchedEffect(Unit) {
         sessions = SessionHistoryStore.loadSessions(ctx)
+
+        RetrofitClient.api.getSessions(email).enqueue(object : Callback<SessionResponse> {
+            override fun onResponse(call: Call<SessionResponse>, response: Response<SessionResponse>) {
+                val body = response.body()
+                if (body != null && body.status == "success" && body.sessions != null) {
+                    sessions = body.sessions
+                }
+            }
+
+            override fun onFailure(call: Call<SessionResponse>, t: Throwable) {
+                // keep showing local sessions on failure
+            }
+        })
     }
 
-    var isWeekly by remember { mutableStateOf(true) }
-
-    val displaySessions =
-        if (isWeekly) sessions.takeLast(7)
-        else sessions.takeLast(30)
+    val displaySessions = sessions.takeLast(30)
 
     val avgReaction =
         if (sessions.isNotEmpty())
@@ -82,10 +95,6 @@ fun StatsScreen(nav: NavController) {
                 }
 
             } else {
-
-                item {
-                    WeeklyMonthlyToggle(isWeekly) { isWeekly = it }
-                }
 
                 item {
                     AnimatedBarGraph(displaySessions)
@@ -150,31 +159,10 @@ fun EmptyStateUI(nav: NavController) {
         Spacer(Modifier.height(24.dp))
 
         Button(
-            onClick = { nav.navigate("sportsScreen") }
+            onClick = { nav.navigate("sports") }
         ) {
             Text("Start Training")
         }
-    }
-}
-
-/* ---------------- TOGGLE ---------------- */
-
-@Composable
-fun WeeklyMonthlyToggle(isWeekly: Boolean, onChange: (Boolean) -> Unit) {
-
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-
-        FilterChip(
-            selected = isWeekly,
-            onClick = { onChange(true) },
-            label = { Text("Weekly") }
-        )
-
-        FilterChip(
-            selected = !isWeekly,
-            onClick = { onChange(false) },
-            label = { Text("Monthly") }
-        )
     }
 }
 

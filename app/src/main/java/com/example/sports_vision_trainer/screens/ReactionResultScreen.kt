@@ -12,10 +12,15 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.sports_vision_trainer.model.GameSession
 import com.example.sports_vision_trainer.storage.SessionHistoryStore
+import com.example.sports_vision_trainer.network.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
 fun ReactionResultScreen(
     nav: NavController,
+    email: String,
     taps: Int,
     avgReaction: Long,
     misses: Int,
@@ -49,16 +54,34 @@ fun ReactionResultScreen(
         NotificationBadgeStore.setNew(ctx)
 
         // 🔥 NEW — Save full history session
+        val currentTimestamp = System.currentTimeMillis()
+        val session = GameSession(
+            gameType = source,
+            score = score,
+            avgReaction = avgReaction,
+            wrong = misses,
+            timestamp = currentTimestamp
+        )
         SessionHistoryStore.saveSession(
             ctx,
-            GameSession(
-                gameType = source,          // swipe, memory, soundvisual, etc
+            session
+        )
+
+        RetrofitClient.api.saveSession(
+            SessionSaveRequest(
+                email = email,
+                gameType = source,
                 score = score,
                 avgReaction = avgReaction,
                 wrong = misses,
-                timestamp = System.currentTimeMillis()
+                timestamp = currentTimestamp
             )
-        )
+        ).enqueue(object : Callback<ApiResponse> {
+            override fun onResponse(call: Call<ApiResponse>, r: Response<ApiResponse>) {
+            }
+            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
+            }
+        })
     }
 
     val improvement =
