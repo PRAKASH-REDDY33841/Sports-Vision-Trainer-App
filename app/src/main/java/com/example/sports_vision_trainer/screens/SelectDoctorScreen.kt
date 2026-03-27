@@ -10,6 +10,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import android.widget.DatePicker
+import android.widget.TimePicker
+import java.util.Calendar
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -314,7 +323,48 @@ fun BookingDialog(
     var date by remember { mutableStateOf("") }
     var time by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
+    var phoneError by remember { mutableStateOf<String?>(null) }
+    var timeError by remember { mutableStateOf<String?>(null) }
+    
     val ctx = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    val datePickerDialog = DatePickerDialog(
+        ctx,
+        { _: DatePicker, year: Int, month: Int, day: Int ->
+            val formattedMonth = (month + 1).toString().padStart(2, '0')
+            val formattedDay = day.toString().padStart(2, '0')
+            date = "$year-$formattedMonth-$formattedDay"
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    ).apply {
+        datePicker.minDate = System.currentTimeMillis() - 1000
+    }
+
+    val timePickerDialog = TimePickerDialog(
+        ctx,
+        { _: TimePicker, hour: Int, minute: Int ->
+            val formattedHour = hour.toString().padStart(2, '0')
+            val formattedMinute = minute.toString().padStart(2, '0')
+            time = "$formattedHour:$formattedMinute"
+            timeError = null
+        },
+        calendar.get(Calendar.HOUR_OF_DAY),
+        calendar.get(Calendar.MINUTE),
+        true
+    )
+
+    val dateInteractionSource = remember { MutableInteractionSource() }
+    if (dateInteractionSource.collectIsPressedAsState().value) {
+        datePickerDialog.show()
+    }
+
+    val timeInteractionSource = remember { MutableInteractionSource() }
+    if (timeInteractionSource.collectIsPressedAsState().value) {
+        timePickerDialog.show()
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -323,33 +373,88 @@ fun BookingDialog(
             Column {
                 OutlinedTextField(
                     value = date,
-                    onValueChange = { date = it },
+                    onValueChange = { },
+                    readOnly = true,
+                    interactionSource = dateInteractionSource,
                     label = { Text("Date (YYYY-MM-DD)") },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g. 2026-03-25") }
+                    placeholder = { Text("Select Date") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF2D1E17),
+                        unfocusedBorderColor = Color.Gray
+                    )
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = time,
-                    onValueChange = { time = it },
+                    onValueChange = { },
+                    readOnly = true,
+                    interactionSource = timeInteractionSource,
                     label = { Text("Time (HH:MM)") },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g. 10:30") }
+                    placeholder = { Text("Select Time") },
+                    isError = timeError != null,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF2D1E17),
+                        unfocusedBorderColor = Color.Gray
+                    )
                 )
+                if (timeError != null) {
+                    Text(
+                        text = timeError!!,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = phone,
-                    onValueChange = { phone = it },
+                    onValueChange = { input -> 
+                        val digits = input.filter { it.isDigit() }
+                        phone = digits
+                        phoneError = if (digits.length != 10 && digits.isNotEmpty()) {
+                            "Mobile number must be exactly 10 digits"
+                        } else null
+                    },
                     label = { Text("Mobile Number") },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g. +91 9876543210") }
+                    placeholder = { Text("10-digit mobile number") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = phoneError != null,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF2D1E17),
+                    )
                 )
+                if (phoneError != null) {
+                    Text(
+                        text = phoneError!!,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (date.isNotBlank() && time.isNotBlank() && phone.isNotBlank()) {
+                    timeError = null
+                    var isTimeValid = true
+                    if (date.isNotBlank() && time.isNotBlank()) {
+                        try {
+                            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+                            val selectedDateTime = sdf.parse("$date $time")
+                            if (selectedDateTime != null && selectedDateTime.before(java.util.Calendar.getInstance().time)) {
+                                isTimeValid = false
+                                timeError = "Please select a future time"
+                            }
+                        } catch (e: Exception) {
+                            // ignore parsing errors
+                        }
+                    }
+
+                    if (isTimeValid && date.isNotBlank() && time.isNotBlank() && phone.length == 10 && phoneError == null) {
                         val req = AppointmentRequest(
                             doctor_email = doctor.clinic_email,
                             athlete_email = athleteEmail,

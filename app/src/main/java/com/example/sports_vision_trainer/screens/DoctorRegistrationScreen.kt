@@ -81,6 +81,19 @@ fun DoctorRegistrationScreen(nav: NavController) {
         }
     }
 
+    val validateEmailRules = { mail: String ->
+        val trimmed = mail.trim()
+        val regex = Regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\$")
+        when {
+            trimmed.isEmpty() -> "Clinic Email is required"
+            trimmed.length > 254 -> "Please enter a valid email address"
+            trimmed.contains("..") -> "Please enter a valid email address"
+            trimmed.startsWith(".") || trimmed.endsWith(".") -> "Please enter a valid email address"
+            !trimmed.matches(regex) -> "Please enter a valid email address"
+            else -> null
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -215,7 +228,7 @@ fun DoctorRegistrationScreen(nav: NavController) {
                     value = clinicEmail,
                     onValueChange = { 
                         clinicEmail = it
-                        if (it.isNotEmpty()) clinicEmailError = null 
+                        if (it.isNotEmpty()) clinicEmailError = validateEmailRules(it) 
                         serverError = null
                     },
                     placeholder = "julian.vane@clinic.com",
@@ -224,8 +237,8 @@ fun DoctorRegistrationScreen(nav: NavController) {
                     onFocusChange = { isFocused ->
                         if (isFocused) {
                             clinicEmailHasFocus = true
-                        } else if (clinicEmailHasFocus && clinicEmail.isEmpty()) {
-                            clinicEmailError = "Clinic Email is required"
+                        } else if (clinicEmailHasFocus) {
+                            clinicEmailError = validateEmailRules(clinicEmail)
                         }
                     }
                 )
@@ -304,8 +317,13 @@ fun DoctorRegistrationScreen(nav: NavController) {
                         if (fullName.isEmpty()) { fullNameError = "Full Name is required"; hasError = true }
                         if (medicalLicense.isEmpty()) { medicalLicenseError = "Medical License is required"; hasError = true }
                         if (hospitalName.isEmpty()) { hospitalNameError = "Hospital/Clinic Name is required"; hasError = true }
-                        if (clinicEmail.isEmpty()) { clinicEmailError = "Clinic Email is required"; hasError = true }
                         
+                        val emailErr = validateEmailRules(clinicEmail)
+                        if (emailErr != null) {
+                            clinicEmailError = emailErr
+                            hasError = true
+                        }
+
                         val passError = validatePasswordRules(password)
                         if (passError != null) {
                             passwordError = passError
@@ -318,11 +336,12 @@ fun DoctorRegistrationScreen(nav: NavController) {
 
                         if (hasError) return@Button
                         
+                        val finalEmail = clinicEmail.trim().lowercase()
                         val req = DoctorRegisterRequest(
                             full_name = fullName,
                             medical_license = medicalLicense,
                             hospital_name = hospitalName,
-                            clinic_email = clinicEmail,
+                            clinic_email = finalEmail,
                             password = password
                         )
                         

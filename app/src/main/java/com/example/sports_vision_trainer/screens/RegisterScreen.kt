@@ -4,11 +4,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -42,12 +45,28 @@ fun RegisterScreen(nav: NavController) {
 
     var errorMsg by remember { mutableStateOf("") }   // ✅ ADDED
 
+    var passwordVisible by remember { mutableStateOf(false) }
+
     val confirmMatch = confirm.isNotEmpty() && confirm == password
 
     // ✅ PASSWORD VALIDATION RULE
     val passwordValid = password.matches(
         Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#\$%^&+=!]).{8,16}$")
     )
+
+    // ✅ EMAIL VALIDATION RULE
+    val emailError = remember(email) {
+        val trimmed = email.trim()
+        val regex = Regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\$")
+        when {
+            trimmed.isEmpty() -> "* Fill this field"
+            trimmed.length > 254 -> "Please enter a valid email address"
+            trimmed.contains("..") -> "Please enter a valid email address"
+            trimmed.startsWith(".") || trimmed.endsWith(".") -> "Please enter a valid email address"
+            !trimmed.matches(regex) -> "Please enter a valid email address"
+            else -> null
+        }
+    }
 
     Column(
         Modifier.fillMaxSize().padding(24.dp),
@@ -84,15 +103,15 @@ fun RegisterScreen(nav: NavController) {
             onValueChange = { email = it },
             label = { Text("Email") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            isError = eTouched && eBlur && email.isBlank(),
+            isError = eTouched && eBlur && emailError != null,
             modifier = Modifier.fillMaxWidth()
                 .onFocusChanged {
                     if (it.isFocused) eTouched = true
                     else if (eTouched) eBlur = true
                 }
         )
-        if (eTouched && eBlur && email.isBlank())
-            Text("* Fill this field", color = MaterialTheme.colorScheme.error)
+        if (eTouched && eBlur && emailError != null)
+            Text(emailError, color = MaterialTheme.colorScheme.error)
 
         Spacer(Modifier.height(12.dp))
 
@@ -101,8 +120,14 @@ fun RegisterScreen(nav: NavController) {
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             isError = pTouched && pBlur && !passwordValid,
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = "Toggle password visibility")
+                }
+            },
             modifier = Modifier.fillMaxWidth()
                 .onFocusChanged {
                     if (it.isFocused) pTouched = true
@@ -141,11 +166,12 @@ fun RegisterScreen(nav: NavController) {
 
         Button(
             onClick = {
-                if (username.isBlank() || email.isBlank() || !passwordValid || !confirmMatch)
+                if (username.isBlank() || emailError != null || !passwordValid || !confirmMatch)
                     return@Button
 
+                val finalEmail = email.trim().lowercase()
                 RetrofitClient.api.register(
-                    RegisterRequest(username, email, password)
+                    RegisterRequest(username, finalEmail, password)
                 ).enqueue(object : Callback<ApiResponse> {
                     override fun onResponse(call: Call<ApiResponse>, r: Response<ApiResponse>) {
                         val response = r.body()   // ✅ ADDED
