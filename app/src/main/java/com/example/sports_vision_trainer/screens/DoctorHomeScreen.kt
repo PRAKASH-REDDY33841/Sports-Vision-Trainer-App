@@ -191,26 +191,24 @@ fun DoctorHomeScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Active Training Cohort Card
+            // Clinical Dashboard Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = cardBg)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
-                    Text("Active Training Cohort", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = darkBrown)
-                    Text("Monitoring real-time neuro-visual\nprogress across 14 active protocols.", fontSize = 12.sp, color = Color.Gray)
+                    Text("Clinical Dashboard", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = darkBrown)
+                    Text("Oversee athlete progress, manage treatment protocols, and review neuro-visual performance metrics in real-time.", fontSize = 12.sp, color = Color.Gray)
                     
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text("84", fontSize = 64.sp, fontWeight = FontWeight.ExtraBold, color = darkBrown)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column(modifier = Modifier.padding(bottom = 12.dp)) {
-                            Text("+12%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
-                            Text("VS LAST MONTH", fontSize = 10.sp, color = Color.Gray)
-                        }
-                    }
+                    Text(
+                        "Your clinical expertise ensures optimal neuro-plasticity development and peak performance for every athlete.",
+                        fontSize = 11.sp,
+                        color = Color.Gray,
+                        lineHeight = 16.sp
+                    )
                 }
             }
             
