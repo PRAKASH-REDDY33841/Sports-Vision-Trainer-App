@@ -5,13 +5,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.sports_vision_trainer"
-    compileSdk = 34
+    namespace = "com.simats.sports_vision_trainer"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.sports_vision_trainer"
+        applicationId = "com.simats.sports_vision_trainer"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
